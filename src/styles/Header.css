@@ -1,0 +1,10 @@
+/* Estilos específicos para el header */
+.header {
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .header h1 {
+    margin: 0;
+  }
+  
