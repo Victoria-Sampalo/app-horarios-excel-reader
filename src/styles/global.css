@@ -14,4 +14,10 @@
     font-size: 20px;
     color:green;
     padding:1rem;
+    margin:1rem;
+  }
+
+  .buttons{
+    display:flex;
+    flex-direction: row;
   }

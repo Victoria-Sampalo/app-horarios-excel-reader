@@ -1,12 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
+import TotalDays from '../components/TotalDays';
+import Incidencias from '../components/Incidencias';
 
 const Home = () => {
+  const [view, setView] = useState('totalDays'); // Default view
+
   return (
-    <main className="home">
-      <h2>Bienvenido a mi aplicación React</h2>
-      <p>Este es un ejemplo provisional de una página de inicio.</p>
-      <p>Puedes agregar contenido, imágenes o componentes personalizados aquí.</p>
-    </main>
+    <div className="home">
+      <h2>Bienvenido</h2>
+      <div className="buttons">
+        <button onClick={() => setView('totalDays')}>Días Totales</button>
+        <button onClick={() => setView('incidencias')}>Incidencias</button>
+      </div>
+      <div className="content">
+        {view === 'totalDays' && <TotalDays />}
+        {view === 'incidencias' && <Incidencias />}
+      </div>
+    </div>
   );
 };
 

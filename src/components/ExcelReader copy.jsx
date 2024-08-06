@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx'; // Import all exports from xlsx
+import '../styles/ExcelReader.css'; // Import your CSS file
 
 function ExcelReader() {
   const [file, setFile] = useState(null);
@@ -21,17 +22,31 @@ function ExcelReader() {
       // Convert sheet to a JSON object
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-      // Now you can access the data and save it to localStorage
+      // Now you can access the data
       setData(jsonData);
-      handleSaveData(jsonData); // Call handleSaveData function
+      console.log("Imprimimos JSON")
+      console.log(JSON.stringify(data))
     };
     reader.readAsArrayBuffer(selectedFile);
   };
 
   const handleSaveData = (data) => {
-    // Save data to localStorage using JSON.stringify
-    localStorage.setItem('excelData', JSON.stringify(data));
-    console.log('Datos guardados en localStorage'); // Inform user about successful save
+    try {
+      // Attempt to create a copy to avoid circular references
+      const dataCopy = JSON.parse(JSON.stringify(data));
+
+      // Option 1: Download the file as JSON
+      const blob = new Blob([JSON.stringify(dataCopy)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'mis_datos.json';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error al guardar o descargar los datos:', error);
+    }
   };
 
   return (
@@ -39,13 +54,16 @@ function ExcelReader() {
       <h2>Lector de Excel</h2>
       <input type="file" onChange={handleFileChange} />
       {data.length > 0 && (
+        
         <ul>
           {data.map((item, index) => (
+            // <li key={index}>{JSON.stringify(item)}</li>
             <li key={index}>{JSON.stringify(item)}</li>
           ))}
         </ul>
       )}
-      <button onClick={handleSaveData}>Guardar datos</button>
+
+      <button onClick={() => handleSaveData(data)}>Descargar datos</button>
     </div>
   );
 }
