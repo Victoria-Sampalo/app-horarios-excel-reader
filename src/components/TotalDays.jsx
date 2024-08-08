@@ -111,6 +111,7 @@ function TotalDays() {
       {employeeOccurrences.length > 0 && (
         <div>
           <h3>Detalles de Empleados</h3>
+          <button onClick={() => handleSaveData(data)}>Descargar datos</button>
           <ul>
             {employeeOccurrences.map((entry, index) => (
               <li key={index}>
@@ -134,7 +135,7 @@ function TotalDays() {
           ))}
         </ul>
       )} */}
-      <button onClick={() => handleSaveData(data)}>Descargar datos</button>
+    
     </div>
   );
 }

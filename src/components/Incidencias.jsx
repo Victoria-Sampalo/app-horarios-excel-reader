@@ -1,92 +1,144 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
+import '../styles/TotalDays.css'; // Import your CSS file
 
-const Incidencias = () => {
-  const [report, setReport] = useState([]);
+function Incidencias() {
+  const [file, setFile] = useState(null);
+  const [data, setData] = useState([]);
+  const [sheetNames, setSheetNames] = useState([]);
+  const [selectedSheet, setSelectedSheet] = useState(null);
+  const [employeeOccurrences, setEmployeeOccurrences] = useState([]);
 
-  const handleFileChange = (event) => {
-    const selectedFile = event.target.files[0];
-    const reader = new FileReader();
-    
-    reader.onload = (e) => {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      
-      // Find the "anual" sheet
-      const sheetName = workbook.SheetNames.find(name => name.toLowerCase() === 'anual');
-      if (!sheetName) {
-        console.error('No se encontró la pestaña "anual".');
-        return;
-      }
-      
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+  const countOccurrencesByEmployee = (data) => {
+    return data.map(row => {
+      const occurrences = {
+        daysNotWorked: 0,
+        daysWorked: 0,
+        nightShiftDays: 0,
+      };
 
-      // Process the data
-      processSheetData(jsonData);
-    };
+      const nightShifts = ['P6', 'P7', 'P8', 'P9', 'P10', 'P11', 'P12', 'P13', 'P15'];
 
-    reader.readAsArrayBuffer(selectedFile);
-  };
-
-  const processSheetData = (data) => {
-    const headers = data[0];
-    const rows = data.slice(1);
-
-    const startIdx = headers.indexOf('ENERO');
-    const endIdx = headers.indexOf('DICIEMBRE');
-    
-    if (startIdx === -1 || endIdx === -1) {
-      console.error('No se encontraron las columnas de fecha.');
-      return;
-    }
-
-    const report = rows.map(row => {
-      const name = row[0];
-      const values = row.slice(startIdx, endIdx + 1);
-      const counts = { P6: 0, P7: 0, P8: 0, P9: 0, P10: 0 };
-
-      values.forEach(value => {
-        if (typeof value === 'string') {
-          if (value === 'P6') counts.P6++;
-          else if (value === 'P7') counts.P7++;
-          else if (value === 'P8') counts.P8++;
-          else if (value === 'P9') counts.P9++;
-          else if (value === 'P10') counts.P10++;
+      Object.keys(row).forEach(key => {
+        if (key.startsWith('__EMPTY_')) {
+          const value = row[key];
+          if (typeof value === 'string') {
+            if (value === 'D' || value === 'F' || value === 'V' || value === 'DV'  || value === 'PR'|| value === 'AP' || value === 'IT') {
+              occurrences.daysNotWorked++;
+            } else {
+              occurrences.daysWorked++;
+              if (nightShifts.includes(value)) {
+                occurrences.nightShiftDays++;
+              }
+            }
+          }
         }
       });
 
-      return { name, counts };
+      return {
+        name: row["__EMPTY"], // Employee name
+        occurrences // Occurrences by this employee
+      };
     });
+  };
 
-    setReport(report);
+  const handleFileChange = (event) => {
+    const selectedFile = event.target.files[0];
+    setFile(selectedFile);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+
+      const sheetNames = workbook.SheetNames;
+      setSheetNames(sheetNames);
+      setSelectedSheet(sheetNames[0]);
+
+      const worksheet = workbook.Sheets[sheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      setData(jsonData);
+
+      // Extract employee names and occurrences
+      const occurrencesByEmployee = countOccurrencesByEmployee(jsonData);
+      setEmployeeOccurrences(occurrencesByEmployee);
+    };
+    reader.readAsArrayBuffer(selectedFile);
+  };
+
+  const handleSheetChange = (event) => {
+    const selectedSheet = event.target.value;
+    setSelectedSheet(selectedSheet);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const worksheet = workbook.Sheets[selectedSheet];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      setData(jsonData);
+
+      // Extract employee names and occurrences
+      const occurrencesByEmployee = countOccurrencesByEmployee(jsonData);
+      setEmployeeOccurrences(occurrencesByEmployee);
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const handleDownload = () => {
+    const wsData = [
+      ["NOMBRES Y APELLIDOS", "DÍAS TRABAJADOS", "DÍAS NOCTURNIDAD", "HORAS NOCTURNIDAD"],
+      ...employeeOccurrences.map(entry => [
+        entry.name,
+        entry.occurrences.daysWorked,
+        entry.occurrences.nightShiftDays,
+        entry.occurrences.nightShiftDays * 1.5
+      ])
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Incidencias');
+
+    XLSX.writeFile(wb, 'incidencias.xlsx');
   };
 
   return (
     <div>
       <h2>Incidencias</h2>
-      <input type="file" accept=".xlsx" onChange={handleFileChange} />
-      <div>
-        <h3>Reporte de Incidencias</h3>
-        {report.length > 0 && (
+      <input type="file" onChange={handleFileChange} />
+      {sheetNames.length > 0 && (
+        <div>
+          <label htmlFor="sheet-select">Selecciona una hoja:</label>
+          <select id="sheet-select" onChange={handleSheetChange} value={selectedSheet}>
+            {sheetNames.map((name, index) => (
+              <option key={index} value={name}>{name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+      {employeeOccurrences.length > 0 && (
+        <div>
+          <h3>Detalles de Empleados</h3>
+          <button onClick={handleDownload}>Descargar Excel</button>
           <ul>
-            {report.map((entry, index) => (
+            {employeeOccurrences.map((entry, index) => (
               <li key={index}>
                 <strong>{entry.name}</strong>
                 <ul>
-                  <li>P6: {entry.counts.P6}</li>
-                  <li>P7: {entry.counts.P7}</li>
-                  <li>P8: {entry.counts.P8}</li>
-                  <li>P9: {entry.counts.P9}</li>
-                  <li>P10: {entry.counts.P10}</li>
+                  <li>Días No Trabajados: {entry.occurrences.daysNotWorked}</li>
+                  <li>Días Trabajados: {entry.occurrences.daysWorked}</li>
+                  <li>Días de Nocturnidad: {entry.occurrences.nightShiftDays}</li>
+                  <li>Horas Nocturnidad: {entry.occurrences.nightShiftDays * 1.5}</li>
                 </ul>
               </li>
             ))}
           </ul>
-        )}
-      </div>
+        
+        </div>
+      )}
     </div>
   );
-};
+}
 
 export default Incidencias;

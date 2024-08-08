@@ -1,23 +1,50 @@
-/* Estilos globales para toda la aplicación */
-  body {
-    font-family: sans-serif;
-    margin: 0;
-    padding:0;
-    text-align: center;
-    background-color: rgb(43, 44, 41);
-    color:rgb(87, 236, 68);
-    font-size: 20px;
-   
-  }
+/* global.css */
 
-  button{
-    font-size: 20px;
-    color:green;
-    padding:1rem;
-    margin:1rem;
-  }
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  font-family: sans-serif;
+  text-align: center;
+  background-color: rgb(43, 44, 41);
+  color: rgb(87, 236, 68);
+  font-size: 20px;
+}
 
-  .buttons{
-    display:flex;
-    flex-direction: row;
-  }
+.app {
+  height: 100vh; /* Vista completa del viewport */
+  display: flex;
+  flex-direction: column; /* Organiza elementos en columna */
+}
+
+header, main, footer {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  flex: 1; /* Ocupa todo el espacio disponible */
+}
+
+button {
+  font-size: 20px;
+  color: green;
+  padding: 1rem;
+  margin: 1rem;
+}
+
+.buttons {
+  display: flex;
+  flex-direction: row;
+}
+
+
+ul{
+ 
+  padding:1rem;
+}
+
+li>ul>li{
+  
+
+}
